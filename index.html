@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PFCメモ</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background: #050505;
+      color: #fff;
+      padding: 20px;
+    }
+    .app {
+      max-width: 430px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin: 18px 0 28px;
+    }
+    .logo {
+      width: 82px;
+      height: 82px;
+      border: 2px solid #fff;
+      border-radius: 24px;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      background: #000;
+    }
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 1px;
+    }
+    .card {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 22px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    input {
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      border: 1px solid #555;
+      background: #000;
+      color: #fff;
+      font-size: 22px;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      background: #fff;
+      color: #000;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .history-title {
+      font-size: 21px;
+      font-weight: 800;
+      margin: 8px 0 12px;
+    }
+    .item {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .date {
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .numbers {
+      line-height: 1.7;
+      font-size: 16px;
+    }
+    .delete {
+      background: #222;
+      color: #fff;
+      border: 1px solid #555;
+      margin-top: 12px;
+      padding: 10px;
+      font-size: 14px;
+    }
+    .message {
+      text-align: center;
+      color: #9cff9c;
+      font-weight: 700;
+      min-height: 24px;
+      margin-top: 10px;
+    }
+    .empty {
+      color: #aaa;
+      text-align: center;
+      padding: 18px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="logo">💪</div>
+      <h1>PFCメモ</h1>
+    </div>
+
+    <div class="card">
+      <label>🔥 カロリー（kcal）</label>
+      <input id="calorie" type="number" inputmode="numeric" placeholder="例：2100" />
+
+      <label>💪 P：たんぱく質（g）</label>
+      <input id="protein" type="number" inputmode="numeric" placeholder="例：160" />
+
+      <label>🥑 F：脂質（g）</label>
+      <input id="fat" type="number" inputmode="numeric" placeholder="例：50" />
+
+      <label>🍚 C：炭水化物（g）</label>
+      <input id="carb" type="number" inputmode="numeric" placeholder="例：240" />
+
+      <button onclick="saveRecord()">保存</button>
+      <div id="message" class="message"></div>
+    </div>
+
+    <div class="history-title">📅 履歴</div>
+    <div id="history"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "pfc-memo-records";
+
+    function todayText() {
+      const d = new Date();
+      const m = d.getMonth() + 1;
+      const day = d.getDate();
+      return `${m}/${day}`;
+    }
+
+    function loadRecords() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    }
+
+    function saveRecords(records) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function saveRecord() {
+      const calorie = document.getElementById("calorie").value;
+      const protein = document.getElementById("protein").value;
+      const fat = document.getElementById("fat").value;
+      const carb = document.getElementById("carb").value;
+
+      if (!calorie && !protein && !fat && !carb) {
+        document.getElementById("message").textContent = "数字を入力してね";
+        return;
+      }
+
+      const records = loadRecords();
+      records.unshift({
+        id: Date.now(),
+        date: todayText(),
+        calorie: calorie || "0",
+        protein: protein || "0",
+        fat: fat || "0",
+        carb: carb || "0"
+      });
+
+      saveRecords(records);
+
+      document.getElementById("calorie").value = "";
+      document.getElementById("protein").value = "";
+      document.getElementById("fat").value = "";
+      document.getElementById("carb").value = "";
+      document.getElementById("message").textContent = "✅ 保存しました！";
+
+      renderHistory();
+    }
+
+    function deleteRecord(id) {
+      const records = loadRecords().filter(r => r.id !== id);
+      saveRecords(records);
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = document.getElementById("history");
+      const records = loadRecords();
+
+      if (records.length === 0) {
+        history.innerHTML = '<div class="empty">まだ記録がありません</div>';
+        return;
+      }
+
+      history.innerHTML = records.map(r => `
+        <div class="item">
+          <div class="date">${r.date}</div>
+          <div class="numbers">
+            🔥 ${r.calorie} kcal<br>
+            💪 P ${r.protein}g　🥑 F ${r.fat}g　🍚 C ${r.carb}g
+          </div>
+          <button class="delete" onclick="deleteRecord(${r.id})">削除</button>
+        </div>
+      `).join("");
+    }
+
+    renderHistory();
+  </script>
+</body>
+</html>
